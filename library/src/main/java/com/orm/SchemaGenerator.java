@@ -24,7 +24,9 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.orm.util.ReflectionUtil.getDomainClasses;
 
@@ -183,6 +185,7 @@ public class SchemaGenerator {
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
         sb.append(tableName).append(" ( ID INTEGER PRIMARY KEY AUTOINCREMENT ");
 
+        Set<String> columns = new HashSet();
         for (Field column : fields) {
             String columnName = NamingHelper.toSQLName(column);
             String columnType = QueryBuilder.getColumnType(column.getType());
@@ -223,6 +226,7 @@ public class SchemaGenerator {
                         sb.append(UNIQUE);
                     }
                 }
+                columns.add(columnName);
             }
         }
 
@@ -233,7 +237,10 @@ public class SchemaGenerator {
 
             String[] constraintFields = constraint.split(",");
             for(int i = 0; i < constraintFields.length; i++) {
-                String columnName = NamingHelper.toSQLNameDefault(constraintFields[i]);
+                String columnName = constraintFields[i];
+                if (!columns.contains(constraintFields[i])) {
+                    columnName = NamingHelper.toSQLNameDefault(constraintFields[i]);
+                }
                 sb.append(columnName);
 
                 if(i < (constraintFields.length -1)) {
@@ -246,6 +253,7 @@ public class SchemaGenerator {
 
         sb.append(" ) ");
         Log.i(SUGAR, "Creating table " + tableName);
+        Log.i(SUGAR, sb.toString());
 
         return sb.toString();
     }
